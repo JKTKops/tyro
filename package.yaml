@@ -1,0 +1,67 @@
+name:                z3ml
+version:             0.1.0.0
+github:              "JKTKops/z3ml"
+license:             BSD3
+author:              "Max Kopinsky"
+maintainer:          "zerglingk9012@gmail.com"
+copyright:           "2022 Max Kopinsky"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description: An implementation of Finding Minimum Type Error Sources, Pavlinovic, King, & Wies (2014). Please see the README on GitHub at <https://github.com/githubuser/z3ml#readme>
+
+language: Haskell2010
+extensions:
+  - ImportQualifiedPost
+  - LambdaCase
+
+dependencies:
+- base >= 4.7 && < 5
+- containers
+- parsec
+- recursion-schemes
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+library:
+  source-dirs: src
+
+executables:
+  z3ml-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - z3ml
+
+tests:
+  z3ml-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - z3ml
