@@ -1,8 +1,9 @@
-{-# LANGUAGE ImportQualifiedPost, InstanceSigs, LambdaCase #-}
+{-# LANGUAGE InstanceSigs #-}
 module MLType where
 
 import Pretty
-import Data.List.NonEmpty
+import Data.List.NonEmpty ( NonEmpty(..) )
+import Data.Set qualified as S
 import ParserUtils ((<|>))
 import ParserUtils qualified as P
 
@@ -16,10 +17,18 @@ data Type
   | TyVar TyVar
   deriving (Eq, Ord, Show)
 
+
+type FreeVars = S.Set TyVar
+typeFvs :: Type -> FreeVars
+typeFvs (TyCon _ ts) = S.unions $ map typeFvs ts
+typeFvs (TyArr t1 t2) = typeFvs t1 `S.union` typeFvs t2
+typeFvs (TyTup ts) = S.unions $ fmap typeFvs ts
+typeFvs (TyVar tv) = S.singleton tv
+
 instance Pretty TyVar where
   pretty :: TyVar -> String
-  pretty (TV n Nothing) = n
-  pretty (TV n (Just i)) = n ++ "." ++ show i
+  pretty (TV n Nothing) = "-" ++ n
+  pretty (TV n (Just i)) = "-" ++ n ++ "." ++ show i
 
 instance Pretty Type where
   prettyPrec :: Int -> Type -> ShowS
@@ -40,7 +49,7 @@ instance Pretty Type where
 
 parseTyVar :: P.Parser TyVar
 parseTyVar = P.lexeme $ do
-  name <- (:) <$> P.char '\'' <*> P.ident
+  name <- P.char '\'' *> P.ident
   uniq <- P.optionMaybe $ P.char '.' *> P.int
   return $ TV name uniq
 

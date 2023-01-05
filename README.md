@@ -37,17 +37,22 @@ let f = fun x y -> y x in f 1 0
 8 1;31-1;32
 9 1;27-1;28
 10 1;29-1;30
-a0 =0= a6
-a1.1 =1= b1.1 -> a2.1
+---
+1 A1('a1, 'a2, 'b1, 'b2) {
+  1 'a1 = ('b1 -> 'a2)
+  ... }
+---
+0 'a0 = 'a6
+...
+9 A1('a1.1, 'a2.1, 'b1.1, 'b2.1)
 ...
 ```
 The full file for this example contains some 16 assertions.
 
-The paper describes an optimization which replaces duplicated sets of assertions from `let`-bound variables with a single quantified assertion. This is not currently supported. The syntax will introduce the quantified assertions before the regular ones, and they will be exported to SMT-LIB 2 as a defined function symbol.
+Each constraint file consists of three parts; an enumeration of locations, definitions of schemes, and raw constraints.
+Tokens are separated by arbitrary whitespace.
 
 ### Part 1: Enumeration
-
-The input consists of three parts. The first part is an enumeration of locations being type-checked. Tokens are separated by arbitrary whitespace.
 
 ```
 Enumeration(0) := "0" Location
@@ -58,22 +63,45 @@ Location := int ';' int '-' int ';' int
 
 The tree structure (really, forest) is inferred from the ranges in the enumeration. There's a logarithmic cost to this. A future version may include the structure in the constraint file, perhaps with a syntax similar to graphviz-dot.
 
-### Part 2: Constraints
+### Part 2: Constraint Schemes
+
+Handling polymorphic variables (more) efficiently is described in the paper via _constraint schemes_. Each scheme is quanitified
+over some number of type variables. In the natural use-case for let-bound variables, the scheme is quantified over all variables introduced
+while typechecking the definition of the binding (including the variable representing the type of the binding itself). Whenever the scheme's
+constraints are needed, instead a fresh instantiation of the quantified variables is produced and a reference to the scheme is inserted
+into the constraints.
+
+To define such a scheme to this system, we need to know its name, the quantified variables, and the entailed constraints.
+The location of the scheme itself is the location of the definition.
+
+```
+Tyvar := "'" name
+Tyvars := List{Tyvar, ","}
+Schemes := List{Scheme}
+
+Scheme := int SchemeName '(' Tyvars ')' '{' Constraints '}'
+```
+
+### Part 3: Constraints
 
 ```
 Constraints := List{Constraint}
 
-Constraint := Type '=' int '=' Type
+Constraint := int Type '=' Type
+            | int SchemeName '(' Tyvars ')'
 
 Type
-  := PType '->' PType
-   | PType name
+  := PType name
    | PType
 
 # parenthesized type, type constant, or type variable
-PType := '(' Type ( '*' Type )* ')' | name | "'" name
+PType := '(' Type '->' Type ')' 
+       | '(' Type ( '*' Type )* ')'
+       | name | "'" name
 ```
 
 The `int` in each constraint is the number associated with the corresponding program range. 
 
-Note that this gives the constraint generator quite some freedom to produce constraints however it wants, as long as it can attribute locations to them. For example, type variables in annotations can be treated as locally abstract while typechecking the definition, but to type variables when typechecking the use sites.
+Note that this gives the constraint generator quite some freedom to produce constraints however it wants, as long as it can attribute locations to them. For example, type variables in annotations can be treated as locally abstract while typechecking the definition, but as type variables when typechecking the use sites.
+
+However, type constructors will not be kind-checked by this system since kind polymorphism is not supported. Whatever produces the constraints should check kinds.

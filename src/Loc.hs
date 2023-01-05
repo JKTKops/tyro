@@ -1,14 +1,18 @@
 {-# LANGUAGE DerivingStrategies, GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-module Loc where
+module Loc
+  ( Line, Col, Loc, Range
+  , LocIndex, LocAST
+  , recoverAST, findSubAST
+  , parseRange, locIndex
+  ) where
 
+import Control.Applicative ((<|>))
 import Data.Tree
 import Data.List (foldl', partition)
 
 import ParserUtils qualified as P
 
--- TODO: location ranges, [(Int, Loc)] -> Tree Int
 newtype Line = Line Int
   deriving newtype (Eq, Ord, Show, Num)
 
@@ -37,9 +41,10 @@ contains :: Range -> Range -> Bool
 contains (Range s1 e1) (Range s2 e2)
   = s1 <= s2 && e1 >= e2
 
-type LocAST = Forest Int
+type LocIndex = Int
+type LocAST = Forest LocIndex
 
-recoverAST :: [(Int, Range)] -> Forest Int
+recoverAST :: [(LocIndex, Range)] -> Forest LocIndex
 recoverAST = fmap (fmap fst) . foldl' insertF []
   where
     insertF :: Forest (Int, Range) -> (Int, Range) -> Forest (Int, Range)
@@ -59,6 +64,13 @@ recoverAST = fmap (fmap fst) . foldl' insertF []
 
     new x = Node x []
 
+findSubAST :: Int -> LocAST -> Maybe (Tree LocIndex)
+findSubAST needle haystack = case haystack of
+  [] -> Nothing
+  t@(Node root sast) : trs
+    | needle == root -> Just t
+    | otherwise -> findSubAST needle sast <|> findSubAST needle trs
+
 parseLoc :: P.Parser Loc
 parseLoc = do
   l <- P.int
@@ -68,3 +80,6 @@ parseLoc = do
 
 parseRange :: P.Parser Range
 parseRange = Range <$> parseLoc <*> (P.char '-' *> parseLoc)
+
+locIndex :: P.Parser LocIndex
+locIndex = P.int

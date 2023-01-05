@@ -1,4 +1,4 @@
-module Pretty where
+module Pretty (Pretty (..)) where
 
 -- TODO: a -> prettyprinter.Pretty.Doc
 class Pretty a where
