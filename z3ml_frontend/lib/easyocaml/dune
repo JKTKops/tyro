@@ -1,0 +1,3 @@
+(library
+ (name ezy)
+ (libraries compiler-libs.common dynlink))

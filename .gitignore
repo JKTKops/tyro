@@ -1,2 +1,4 @@
 .stack-work/
+_build/
+_opam/
 *~

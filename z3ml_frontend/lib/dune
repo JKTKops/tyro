@@ -1,0 +1,3 @@
+(library
+ (name zgen)
+ (libraries compiler-libs.common ezy))

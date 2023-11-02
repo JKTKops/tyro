@@ -2,140 +2,38 @@
 
 An implementation of the algorithm described in Finding Minimum Type Error Sources, Pavlinovic, King, Wies (2014).
 
-This part of the system handles reading the constraint / location path file (see below) and outputs an SMT solver script compatible with SMT-LIB 2.6.
+Includes _delayed instantiation_, the measurement of which is the subject of my MSc work.
 
-## Minimum Type Error Sources
+# Organization
 
-The algorithm finds a minimum-cost set of program locations which describe all of the type errors in the program. The weight of each location can be selected in the constraint file if desired, but will
-otherwise default to the number of (transitive, reflexive) children of that location.
+z3ml_frontend/ contains an OCaml project using compiler-libs which consists of a heavily hacked port of EzyOCaml. This port has been updated to use compiler-libs and to work with version 4.13.1 of OCaml. Then, it has been hacked to implement Wies et. al.'s constraint generation algorithm with delayed instantiation. When this tool runs, it produces an intermediate `.z3ml` file. See z3ml/README.md for more information.
 
-This heuristic is described in the paper and is fairly effective. However, the constraint generator is responsible for appropriately setting relevant constraints to be hard.
+z3ml/ contains a Haskell project which consumes the `.z3ml` files produced by the frontend (or written by hand) to create a `.smt` file containing an SMT-LIB2 script. The project also contains a driver program which can invoke the frontend on an OCaml program, consume the generated `.z3ml` file to create an SMT script, invoke `z3` on that script, and finally interpret the output to display the (set of) sources range(s) identified as the most likely error source.
 
-Some useful cases where this should be done include
-* the type signatures of library functions
-* the constraint associated with the location of a local variable which is only used once.
+z3ml/README.md is a good place to look next.
 
-The last one can also be generalized, with a hard constraint that asserts local variables are used at least once after replacing all error sources.
+# Project Goals
 
-## Constraint/Location files
+The problem we aim to contribute to is _type error provenance_. This concerns the region of source code which is the underlying cause of a type error.
+We do not aim to give good information about _why_ there is a type error, just _where_. In fact, the tool is not capable to producing "why" information at all.
+To use in practice, the output must be combined with that of `ocamlc` or some other typechecker,
+and our output can then be used as a hint towards where a fix might need to occur.
+`ocamlc`'s reported location and our reported location often differ significantly.
 
-The syntax of these files is still tentative. Only textual input is accepted at the moment, but a `-s` command line flag is planned which accepts serialized input instead.
+We aim to demonstrate an improvement to Wies et. al.'s algorithm, called _delayed instantiation_.
+Every use of a let-bound value in a typical inference algorithm requires instantiating the type of the value.
+In constraint generation algorithms, this problem is much worse - the let-bound values have associated constraints.
+If we are not able to solve and discharge these constraints during constraint generation, then we must also instantiate _all_ of the constraints associated with a let-bound value whenever it is used.
+Delayed instantiation instead records that an instantiation is needed, but leaves it up to the SMT solver to decide when, or if, to actually do it.
+Program locations which the SMT solver can determine to be irrelevant while therefore not lead to instantiations, and the SMT scripts are significantly smaller (though certainly no easier to read).
 
-Example:
-```
-let f = fun x y -> y x in f 1 0
-```
-```
-0 1;1-1;32
-1 1;9-1;23
-2 1;15-1;23
-3 1;20-1;23
-4 1;20-1;21
-5 1;22-1;23
-6 1;27-1;32
-7 1;27-1;30
-8 1;31-1;32
-9 1;27-1;28
-10 1;29-1;30
----
-1 A1('a1, 'a2, 'b1, 'b2) {
-  1 'a1 = ('b1 -> 'a2)
-  ... }
----
-0 'a0 = 'a6
-...
-9 A1('a1.1, 'a2.1, 'b1.1, 'b2.1)
-...
-```
-The full file for this example contains some 16 assertions.
+Since we aim to demonstrate and evaluate an algorithm, the implementation does not cover all of OCaml. The most egregious missing features are mutually recursive bindings (which have significantly over-generalized types in each other's bodies) and modules. Builtin ("pervasive") modules should work, though some issues have arisen ocassionally in testing. Custom modules do not seem to work at all. Fixing both of these issues is in the project scope, but probably not in the scope of my MSc as we are able to evaluate the algorithm without these features.
 
-Each constraint file consists of three parts; an enumeration of locations, definitions of schemes, and raw constraints.
-Tokens are separated by arbitrary whitespace.
+Other missing features include complete support for record types, especially with ambiguous field names; GADTs; certain forms of type declaration, and environment-restricted let-generalization. We fully generalize every let-bound value, even if some unification variables in its type are free in the environment. This is a well-known complication of HM let-generalization which we ignore for simplicity; doing this is common in the community for demonstrating features such as this.
 
-### Part 1: Enumeration
+# Aside: "Let should not be generalized"
 
-```
-Enumeration(0) := "0" Location
-Enumeration(n) := Enumeration(n-1) n Location
-
-Location := int ';' int '-' int ';' int
-```
-
-The tree structure (really, forest) is inferred from the ranges in the enumeration. There's a logarithmic cost to this. A future version may include the structure in the constraint file, perhaps with a syntax similar to graphviz-dot.
-
-### Part 2: Constraint Schemes
-
-Handling polymorphic variables (more) efficiently is described in the paper via _constraint schemes_. Each scheme is quanitified
-over some number of type variables. In the natural use-case for let-bound variables, the scheme is quantified over all variables introduced
-while typechecking the definition of the binding (including the variable representing the type of the binding itself). Whenever the scheme's
-constraints are needed, instead a fresh instantiation of the quantified variables is produced and a reference to the scheme is inserted
-into the constraints.
-
-To define such a scheme to this system, we need to know its name, the quantified variables, and the entailed constraints.
-The location of the scheme itself is the location of the definition.
-
-```
-Tyvar := "'" name
-Tyvars := List{Tyvar, ","}
-Schemes := List{Scheme}
-
-Scheme := int SchemeName '(' Tyvars ')' '{' Constraints '}'
-```
-
-### Part 3: Constraints
-
-```
-Constraints := List{Constraint}
-
-Constraint := int Type '=' Type
-            | int SchemeName '(' Tyvars ')'
-
-Type
-  := PType name
-   | PType
-
-# parenthesized type, type constant, or type variable
-PType := '(' Type '->' Type ')' 
-       | '(' Type ( '*' Type )* ')'
-       | name | "'" name
-```
-
-The `int` in each constraint is the number associated with the corresponding program range. 
-
-Note that this gives the constraint generator quite some freedom to produce constraints however it wants, as long as it can attribute locations to them. For example, type variables in annotations can be treated as locally abstract while typechecking the definition, but as type variables when typechecking the use sites.
-
-However, type constructors will not be kind-checked by this system since kind polymorphism is not supported. Whatever produces the constraints should check kinds.
-
-## Assertion Chain Generation
-
-The idea is that we know the _program_ tree just from inspecting the intervals. Given,
-for example, a tree like
-          0
-        /   \
-       1     2
-      / \   / \
-     3   4 5   6
-
-Then when we see a constraint file like
-2 A(x,y,z)  <--- the location here cuts off chains for below; which is to say
-             --- we follow them up their locations up the tree up to (but not incl.)
-             --- the location given here.
-  5 x = int <--- so this will just be 5 => x = int, without a 2=> in front.
-  6 y = z
----
-2 A(a,b,c)          <--- this constraint is generated by the let expression
-1 A(int, bool, int) <--- this constraint is generated by a use of the bound var
-3 w = int           <--- these two are just random examples
-4 int = w
-
-Then we generate the constraint SMT file of (pseudocode)
-def A(x,y,z):
-  5 => x = int   <--- 
-  && 6 => y = z
-0 => (1 => (A(int, bool, int)
-            && 3 => w = int
-            && 4 => int = w)
-     && 2 => A(a,b,c))
-
-Notice how the shape of the implications follows the paths through the tree.
+Work on type systems other than OCaml's (see, for example, OutsideIn(X): Modular type inference with local assumptions, Simon P. Jones et. al.) has strongly suggested that most let-bound values are used monomorphically.
+A system which only generalizes let-bound values _with type annotations_ would be freed completely from the instantiation problem.
+Such a language would not be OCaml, but would be an interesting underlying system for a new language which uses the techniques of Wies et. al. and/or Haack and Wells to generate nice type errors.
 

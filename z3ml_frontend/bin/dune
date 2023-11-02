@@ -1,0 +1,4 @@
+(executable
+ (public_name zgen)
+ (name main)
+ (libraries zgen))
