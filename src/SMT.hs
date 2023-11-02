@@ -3,8 +3,10 @@ module SMT
   , Command(..), Assertion(..)
   , SMT(..)
   , outputCommands
+  , lookupLoc
   ) where
 
+import Data.IntMap        qualified as IM
 import Data.List.NonEmpty qualified as NE
 import Constraint
 import MLType
@@ -12,6 +14,9 @@ import Pretty
 
 newtype LocVar = LocVar Int
   deriving (Eq, Show)
+
+lookupLoc :: LocVar -> IM.IntMap a -> a
+lookupLoc (LocVar i) m = m IM.! i
 
 data Command
   = DefineType [(String, Int)] -- names & arities, nothing is implicit

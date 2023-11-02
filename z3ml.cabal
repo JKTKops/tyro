@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.0.
+-- This file has been generated from package.yaml by hpack version 0.35.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -27,12 +27,13 @@ library
   exposed-modules:
       Constraint
       Conversion
-      Lib
+      FromXML
       Loc
       MLType
       ParserUtils
       Pretty
       SMT
+      SMT.Response
   other-modules:
       Paths_z3ml
   hs-source-dirs:
@@ -47,9 +48,10 @@ library
     , containers
     , parsec
     , recursion-schemes
+    , xml
   default-language: Haskell2010
 
-executable z3ml-exe
+executable z3ml
   main-is: Main.hs
   other-modules:
       Paths_z3ml
@@ -63,8 +65,11 @@ executable z3ml-exe
   build-depends:
       base >=4.7 && <5
     , containers
+    , filepath
     , parsec
+    , process
     , recursion-schemes
+    , xml
     , z3ml
   default-language: Haskell2010
 
@@ -85,5 +90,6 @@ test-suite z3ml-test
     , containers
     , parsec
     , recursion-schemes
+    , xml
     , z3ml
   default-language: Haskell2010

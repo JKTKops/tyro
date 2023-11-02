@@ -54,7 +54,10 @@ parseTyVar = P.lexeme $ do
   return $ TV name uniq
 
 parseName :: P.Parser String
-parseName = P.lexeme P.ident
+parseName = P.lexeme $ do
+  firstBit <- P.ident
+  thenBit  <- P.optionMaybe $ P.char '.' *> P.int
+  return $ firstBit ++ maybe "" (\t -> "." ++ show t) thenBit
 
 parsePType :: P.Parser Type
 parsePType

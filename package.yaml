@@ -30,6 +30,7 @@ dependencies:
 - containers
 - parsec
 - recursion-schemes
+- xml
 
 ghc-options:
 - -Wall
@@ -46,7 +47,7 @@ library:
   source-dirs: src
 
 executables:
-  z3ml-exe:
+  z3ml:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -54,6 +55,8 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - filepath
+    - process
     - z3ml
 
 tests:
