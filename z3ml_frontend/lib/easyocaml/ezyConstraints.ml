@@ -3,6 +3,10 @@ open EzyUtils
 open EzyUtils.Infix
 open EzyTypingCoreTypes
 
+let hard_loc_tbl : (ExtLocation.t, unit) Hashtbl.t = Hashtbl.create 1000
+let make_loc_hard (loc : ExtLocation.t) = Hashtbl.add hard_loc_tbl loc ()
+let is_loc_hard (loc : ExtLocation.t) = Hashtbl.mem hard_loc_tbl loc
+
 (******************************************************************************)
 (*                                 EqConstr                                   *
  * [EqConstr.t] is a constraint between two types annotated with a single     *

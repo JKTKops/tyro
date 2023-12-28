@@ -55,13 +55,17 @@ Tokens are separated by arbitrary whitespace.
 ### Part 1: Enumeration
 
 ```
-Enumeration(0) := "0" Location
-Enumeration(n) := Enumeration(n-1) n Location
+Enumeration(0) := "0" Location Weight? ';'
+Enumeration(n) := Enumeration(n-1) n Location Weight? ';'
 
 Location := int ';' int '-' int ';' int
+Weight := int
 ```
 
 The tree structure (really, forest) is inferred from the ranges in the enumeration. There's a logarithmic cost to this. A future version may include the structure in the constraint file, perhaps with a syntax similar to graphviz-dot.
+
+Weights are optional. If not specified, the weight is the size of the subtree rooted at that location. If the weight is specified as 0,
+the assertion is made hard.
 
 ### Part 2: Constraint Schemes
 

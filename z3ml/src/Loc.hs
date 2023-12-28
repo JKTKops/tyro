@@ -9,7 +9,7 @@ module Loc
 
 import Control.Applicative ((<|>))
 import Data.Tree
-import Data.List (foldl', partition)
+import Data.List (foldl', partition, sortOn)
 
 import ParserUtils qualified as P
 
@@ -42,33 +42,44 @@ contains (Range s1 e1) (Range s2 e2)
   = s1 <= s2 && e1 >= e2
 
 type LocIndex = Int
-type LocAST = Forest LocIndex
+type LocAST = Forest (LocIndex, Maybe Int)
 
-recoverAST :: [(LocIndex, Range)] -> Forest LocIndex
-recoverAST = fmap (fmap fst) . foldl' insertF []
+recoverAST :: [(LocIndex, Range, Maybe Int)] -> LocAST
+recoverAST = fmap (fmap removeRange) . sortAST . foldl' insertF []
   where
-    insertF :: Forest (Int, Range) -> (Int, Range) -> Forest (Int, Range)
+    insertF :: Forest (Int, Range, Maybe Int)
+            -> (Int, Range, Maybe Int)
+            -> Forest (Int, Range, Maybe Int)
     insertF [] p = [new p]
-    insertF (t : ts) p@(_,r)
+    insertF (t : ts) p@(_,r,_)
       | r `contains` tr =
         let (cs, ts') = partition ((r `contains`) . range) (t:ts)
         in Node p cs : ts'
       | tr `contains` r = insertT t p : ts
       | otherwise = t : insertF ts p
       where 
-        range = snd . rootLabel
+        range = proj2 . rootLabel
+        proj2 (_,x,_) = x
         tr = range t
 
-    insertT :: Tree (Int, Range) -> (Int, Range) -> Tree (Int, Range)
+    insertT :: Tree (Int, Range, Maybe Int)
+            -> (Int, Range, Maybe Int)
+            -> Tree (Int, Range, Maybe Int)
     insertT (Node tr cf) p = Node tr $ insertF cf p
 
     new x = Node x []
 
-findSubAST :: Int -> LocAST -> Maybe (Tree LocIndex)
+    removeRange (ix,_,w) = (ix, w)
+
+sortAST :: Forest (Int, Range, Maybe Int) -> Forest (Int, Range, Maybe Int)
+sortAST = fmap sortChildren . sortOn (\(Node (_,r,_) _) -> r) where
+  sortChildren (Node p cs) = Node p $ sortAST cs
+
+findSubAST :: Int -> LocAST -> Maybe (Tree (LocIndex, Maybe Int))
 findSubAST needle haystack = case haystack of
   [] -> Nothing
   t@(Node root sast) : trs
-    | needle == root -> Just t
+    | needle == fst root -> Just t
     | otherwise -> findSubAST needle sast <|> findSubAST needle trs
 
 parseLoc :: P.Parser Loc

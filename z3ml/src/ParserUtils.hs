@@ -1,6 +1,6 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 module ParserUtils 
-  ( int
+  ( int, double
   , ident
   , lexeme
   , parens, braces, commaSep
@@ -12,17 +12,32 @@ module ParserUtils
 import Text.Parsec
 import Text.Parsec.Char
 import Text.Parsec.String
-import Text.Parsec.Language (haskellDef)
+import Text.Parsec.Language (emptyDef, haskellDef)
 import Text.Parsec.Token qualified as P
 
 lang :: P.TokenParser ()
-lang = P.makeTokenParser $ haskellDef { P.commentLine = "" }
+lang = P.makeTokenParser $ emptyDef
+  { P.identStart  = P.identStart haskellDef
+  , P.identLetter = char '.' <|> P.identLetter haskellDef
+  }
 
 int :: Parser Int
 int = fromInteger <$> P.natural lang
 
+double :: Parser Double
+double = try (P.float lang) <|> (fromIntegral <$> int)
+
+-- We must allow identifiers like foo' when parsing input, but
+-- smtlib does NOT allow apostrophes in identifer names. To fix this,
+-- we use an encoding scheme to hide the ' with symbols that are allowed:
+-- replace ' with ^- and replace ^ with ^^. ^ is very rare (only appears
+-- in custom operators) so we're pretty much free to use it.
 ident :: Parser String
-ident = P.identifier lang
+ident = fixup <$> P.identifier lang where
+  fixup = concatMap encodeApo
+  encodeApo '\'' = "^-"
+  encodeApo '^'  = "^^"
+  encodeApo c    = [c]
 
 lexeme :: Parser a -> Parser a
 lexeme = P.lexeme lang

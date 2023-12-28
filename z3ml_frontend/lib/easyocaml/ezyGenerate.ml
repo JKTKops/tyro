@@ -25,6 +25,8 @@ let ty_for_constant label c =
     | Const_string _s -> EzyPredef.string_type label
     | Const_float _f -> EzyPredef.float_type label
 
+
+
 (************************************************************************ }}} *
                                     Pattern
  ************************************************************************ {{{ *)
@@ -430,25 +432,27 @@ let rec m_for_pattern: imported_pattern -> EzyEnv.t -> (generated_pattern * AtCo
 
       | Ppat_constraint (p, ct) ->
           m_for_pattern p env >>= fun (enr_pat, cs0, b, pp0) ->
-          let a1 = Ty.fresh_var () in
-          let a2 = Ty.fresh_var () in
-          let a3 = Ty.fresh_var () in
           begin try
-            let eloc' = ExtLocation.Source ct.Parsetree.ptyp_loc in
+            (* AbelianGrape: simplified greatly in exchange for not distinguishing the overall
+              pattern location from the location of the constraint type.
+              Also, pattern constraints are made hard, because Wies et. al. did that. *)
+            (* let eloc' = ExtLocation.Source ct.Parsetree.ptyp_loc in *)
             let ty = ty_of_pat enr_pat in
             let _, ty' = EzyEnrichedAst.import_core_type true (env_for_ct_unloc env) StringMap.empty ct in
             let cs1 = AtConstrSet.from_list [
-              AtConstr.create a2 eloc' ty' ;
-              AtConstr.create a2 eloc ty ;
+              AtConstr.create ty eloc ty' ;
+              (* All of these are redundant. ~AbelianGrape *)
+              (* AtConstr.create a2 eloc ty ;
               AtConstr.create a3 eloc' ty' ;
-              AtConstr.create a1 eloc a3 ;
+              AtConstr.create a1 eloc a3 ; *)
             ] in
             let pp1 = PostProcess.type_annotations [TypeAnnotation.create ty loc ct] in
             let pat' = {
-              ppat_data = annotation a1 ;
+              ppat_data = annotation ty ;
               ppat_loc = loc ;
               ppat_desc = Ppat_constraint (enr_pat, ct) ;
             } in
+            make_loc_hard eloc;
             M.return (pat', AtConstrSet.union cs0 cs1, b, PostProcess.union pp0 pp1)
           with
             | EzyEnrichedAst.Invalid_type_constructor (lid, n, m) ->
@@ -756,6 +760,12 @@ and for_expr: imported_expression -> EzyEnv.t -> generated_expression * AtConstr
             AtConstr.create a eloc a2 ;
           ] in
           *)
+          (* Make partial application locations hard. So if the exp1 is also an apply, it's a partial application.*)
+          (* Wies et.al. do this because "programmers would not find reports at these ranges useful." *)
+          begin match exp1.pexp_desc with
+          | Pexp_apply (_, _) -> make_loc_hard (ExtLocation.Source exp1.pexp_loc)
+          | _ -> ()
+          end;
           let g = Ty.fresh_var () in
           let enr_exp1, cs1, pp1 = for_expr exp1 env in
           let enr_exp2, cs2, pp2 = for_expr exp2 env in
@@ -1322,6 +1332,11 @@ let for_structure_item env type_accu strit =
                     EzyAst.Abstract, EzyEnv.Abstract
                 | EzyAst.Synonym ct ->
                     let _tyvarmap, ty = EzyEnrichedAst.import_core_type false ctor_lookup tyvarmap ct in
+                    (* AbelianGrape: record type synonyms for nullary type constructors. *)
+                    begin match param_names with
+                      | [] -> Ty.add_type_synonym (Ident.name ty_name.nm_data) ty
+                      | _  -> failwith "unsupported non-nullary type synonym"
+                    end;
                     EzyAst.Synonym ct, EzyEnv.Synonym ty 
                 | EzyAst.Variant vs ->
                     let env_vs =

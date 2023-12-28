@@ -408,9 +408,26 @@ let lookup proj lid (env:t) =
         let id, x = Ident.find_name name (proj env) in
         Path.Pident id, x
     | Longident.Ldot (lid, name) ->
-        let path, md_env = lookup_module lid env in
-        let _, x = Ident.find_name name (proj md_env) in
-        Path.Pdot (path, name), x
+        begin try
+          let path, md_env = lookup_module lid env in
+          let _, x = Ident.find_name name (proj md_env) in
+          Path.Pdot (path, name), x
+        with
+        | Not_found ->
+          (* try locally opening the module in case it's persistent.
+             This is absolutely a hack, and the right thing to do is
+             probably to fix lookup_module. ~AbelianGrape *)
+          let rec open_chain env = function
+            | Longident.Lident n -> snd @@ open_module n env
+            | Longident.Ldot (lid, n) ->
+              snd @@ open_module n @@ open_chain env lid
+            | Longident.Lapply _ -> invalid_arg "EzyEnv.lookup"
+          in
+          let id, x = Ident.find_name name (proj (open_chain env lid)) in
+          (* THIS IS THE WRONG PATH! We just don't need the right one, and constructing
+             it given the hack above seems very hard. ~AbelianGrape *)
+          Path.Pident id, x
+        end
 
     | Longident.Lapply _ ->
         invalid_arg "EzyEnv.lookup"

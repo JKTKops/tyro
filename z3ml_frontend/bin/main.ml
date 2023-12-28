@@ -34,8 +34,12 @@ let () =
       try Ezy.EzyEnv.open_module "Stdlib" env with
       | Not_found -> Ezy.EzyEnv.open_module "Stdlib" env
     in
-    (* let env = Compmisc.initial_env () in
-    let env = Ezy.EzyEnv.import env in *)
+    (*
+    let env = Compmisc.initial_env () in
+    let env = try Ezy.EzyEnv.import env with
+              | Not_found -> Ezy.EzyEnv.import env
+    in
+    *)
     (* ^^^ the Not_found happens at import here... need to try twice? *)
     (* TODO: If there are PostProcess errors, don't output. *)
     let (_, acs, _, _pp) = Ezy.EzyGenerate.for_structure etree env in

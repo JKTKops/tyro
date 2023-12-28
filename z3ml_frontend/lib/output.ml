@@ -124,6 +124,11 @@ module EmitEnumeration = struct
     print_pos fmt loc.loc_start;
     Format.pp_print_char fmt '-';
     print_pos fmt loc.loc_end;
+    if is_loc_hard (ExtLocation.Source loc) then begin
+      Format.pp_print_char fmt ' ';
+      Format.pp_print_int fmt 0;
+    end;
+    Format.pp_print_char fmt ';';
     Format.pp_print_newline fmt ()
 
   let f fmt tbl = postprocess tbl |> List.iter (print_pairing fmt)
@@ -132,6 +137,10 @@ end
 module EmitConstraints = struct
 
   let f fmt ?(tbl=Hashtbl.create 0) cs =
+    (* For debugging the type synonym hashtable *)
+    (*begin 
+      Hashtbl.iter (fun n _ -> print_string n; print_newline ()) Ezy.EzyGenerate.type_synonyms
+    end;*)
     let open AtConstr in
     let get l = RenumberLocs.lookup l tbl in
     let pc (c : t) =

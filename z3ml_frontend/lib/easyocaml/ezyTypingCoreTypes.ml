@@ -69,6 +69,9 @@ module rec Ty: sig
   val print: Format.formatter -> t -> unit
   val fresh_var: unit -> t
 
+  val add_type_synonym : string -> t -> unit 
+  val lookup_type_synonym : Path.t -> t option
+
   val set_label : t -> ExtLocation.t -> t
   val get_label : t -> ExtLocation.t
 
@@ -246,13 +249,31 @@ end = struct
       | Arrow (l, tx, ty) ->
           Arrow (l, type_substitute tx s, type_substitute ty s)
 
+  (*******************************************************************
+     [Type Synonym Hack]
+  ***********************************************~AbelianGrape *)
+
+  (* Table for recording all (nullary) type synonyms; this is a hack that
+     we use to expand type synonyms while emitting constraints.
+     ~AbelianGrape *)
+  let type_synonyms : (string, Ty.t) Hashtbl.t = Hashtbl.create 10
+  let add_type_synonym (str : string) (t : Ty.t) : unit =
+    Hashtbl.add type_synonyms str t
+  let lookup_type_synonym (p : Path.t) = Hashtbl.find_opt type_synonyms (Path.name p)
+
   let rec print ppf = function
     | Var tyv ->
         TyVar.print ppf tyv
     |  Constr (_, lid, tys) -> (
         match tys with
-          | [] -> Format.fprintf ppf "%s" (Path.name lid)
-          | _ -> Format.fprintf ppf "(%a) %s" (List.print print ", ") tys (Path.name lid)
+          | [] ->
+            (* Expand type synonyms. ~AbelianGrape *)
+            begin match lookup_type_synonym lid with
+              | Some t -> print ppf t
+              | None   -> Format.fprintf ppf "%s" (Path.name lid)
+            end
+          (* Extra parentheses to simplify z3ml. ~AbelianGrape *)
+          | _ -> Format.fprintf ppf "((%a) %s)" (List.print print ", ") tys (Path.name lid)
       )
     | Tuple (_, tys) ->
         Format.fprintf ppf "(%a)" (List.print print " * ") tys
