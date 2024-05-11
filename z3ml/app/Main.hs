@@ -26,12 +26,11 @@ main = do
   let z3ml' = unlines . drop 2 $ lines z3ml -- drop the [WRN coretys ...]
   length z3ml' `seq` pure () -- force z3ml' to avoid deadlock
   when dump $ writeFile z3mlPath z3ml'
-  exitCode <- waitForProcess ph
   let ci = getParse "zgen produced malformed z3ml" $ parseInput "<zgen>" z3ml'
       commands = convert ci
       rangeMap = getRangeMapping ci
   writeFile smtPath (outputCommands commands)
-  let z3command = shell $ unwords ["timeout", "90s", "z3", smtPath]
+  let z3command = shell $ unwords ["z3", smtPath]
       cp = z3command{ std_out = CreatePipe }
   (_, Just z3out, _, ph) <- createProcess cp
   z3response <- hGetContents z3out
