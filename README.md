@@ -26,7 +26,7 @@ The next step is to install the frontend, written in OCaml. This will produce an
 From the root of your clone (`tyro/`), execute the following:
 
 ```bash
-$ cd tyro/tyro_frontend
+$ cd tyro_frontend
 $ opam switch create .
 ```
 
