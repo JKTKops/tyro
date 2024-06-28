@@ -16,10 +16,14 @@ main :: IO ()
 main = do
   args <- getArgs
   let path : args0 = args
+      help = path == "-h" || path == "--help"
       (dump, args1) = case args0 of ("-d":a1) -> (True, a1) ; _ -> (False, args0)
       outPath = case args1 of ("-o":op:_) -> op ; _ -> path -<.> "z3ml.out"
       z3mlPath = path -<.> "z3ml"
       smtPath  = path -<.> "smt"
+  when help $ do
+    displayHelp
+    exitSuccess
   let cp = proc "zgen" [path] -- , "-o", z3mlPath]
   (_, Just zgenOut, _, ph) <- createProcess cp{ std_out = CreatePipe }
   z3ml <- hGetContents zgenOut
@@ -59,3 +63,15 @@ getParse _ (Right v)  = v
 exitIfFail :: ExitCode -> IO ()
 exitIfFail ExitSuccess = pure ()
 exitIfFail other = exitWith other
+
+displayHelp :: IO ()
+displayHelp = do
+  mapM_ putStrLn
+    [ "Usage: tyro FILE [-d] [-o FILENAME]"
+    , "Localize type errors in FILE."
+    , ""
+    , "FILE is required. If both options are present, they must be in the given order."
+    , ""
+    , "  -d           dump the intermediate representation (file extension will be .z3ml)"
+    , "  -o FILENAME  write the results of localization to FILENAME"
+    ]

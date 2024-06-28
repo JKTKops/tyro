@@ -1,4 +1,4 @@
-# z3ml
+# Tyro
 
 An implementation of the algorithm described in Finding Minimum Type Error Sources, Pavlinovic, King, Wies (2014).
 
