@@ -88,11 +88,11 @@ For more information about the intermediate representation, see tyro/README.md.
 
 # Organization
 
-tyro_frontend/ contains an OCaml project, consisting of a heavily hacked port of EzyOCaml. This port has been updated to use compiler-libs and to work with version 4.13.1 of OCaml. Then, it has been hacked to implement Wies et. al.'s constraint generation algorithm with delayed instantiation. When this tool runs, it produces an intermediate `.z3ml` file. See tyro/README.md for more information.
+`tyro_frontend/` contains an OCaml project, consisting of a heavily hacked port of EzyOCaml. This port has been updated to use compiler-libs and to work with version 4.13.1 of OCaml. Then, it has been hacked to implement Wies et. al.'s constraint generation algorithm with delayed instantiation. When this tool runs, it produces an intermediate `.z3ml` file. See tyro/README.md for more information.
 
-tyro/ contains a Haskell project which consumes the `.z3ml` files produced by the frontend (or written by hand) to create a `.smt` file containing an SMT-LIB2 script. The project also contains a driver program which can invoke the frontend on an OCaml program, consume the generated `.z3ml` file to create an SMT script, invoke `z3` on that script, and finally interpret the output to display the (set of) sources range(s) identified as the most likely error source.
+`tyro/` contains a Haskell project which consumes the `.z3ml` files produced by the frontend (or written by hand) to create a `.smt` file containing an SMT-LIB2 script. The project also contains a driver program which can invoke the frontend on an OCaml program, consume the generated `.z3ml` file to create an SMT script, invoke `z3` on that script, and finally interpret the output to display the (set of) sources range(s) identified as the most likely error source.
 
-z3ml/README.md is a good place to look next.
+`tyro/README.md` is a good place to look next.
 
 # Project Goals
 
