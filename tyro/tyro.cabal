@@ -1,14 +1,14 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 
-name:           z3ml
+name:           tyro
 version:        0.1.0.0
-description:    An implementation of Finding Minimum Type Error Sources, Pavlinovic, King, & Wies (2014). Please see the README on GitHub at <https://github.com/githubuser/z3ml#readme>
-homepage:       https://github.com/JKTKops/z3ml#readme
-bug-reports:    https://github.com/JKTKops/z3ml/issues
+description:    An implementation of Finding Minimum Type Error Sources, Pavlinovic, King, & Wies (2014). Please see the README on GitHub at <https://github.com/JKTKops/tyro#readme>
+homepage:       https://github.com/JKTKops/tyro#readme
+bug-reports:    https://github.com/JKTKops/tyro/issues
 author:         Max Kopinsky
 maintainer:     zerglingk9012@gmail.com
 copyright:      2022 Max Kopinsky
@@ -21,7 +21,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/JKTKops/z3ml
+  location: https://github.com/JKTKops/tyro
 
 library
   exposed-modules:
@@ -35,7 +35,7 @@ library
       SMT
       SMT.Response
   other-modules:
-      Paths_z3ml
+      Paths_tyro
   hs-source-dirs:
       src
   default-extensions:
@@ -51,10 +51,10 @@ library
     , xml
   default-language: Haskell2010
 
-executable z3ml
+executable tyro
   main-is: Main.hs
   other-modules:
-      Paths_z3ml
+      Paths_tyro
   hs-source-dirs:
       app
   default-extensions:
@@ -69,15 +69,15 @@ executable z3ml
     , parsec
     , process
     , recursion-schemes
+    , tyro
     , xml
-    , z3ml
   default-language: Haskell2010
 
-test-suite z3ml-test
+test-suite tyro-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_z3ml
+      Paths_tyro
   hs-source-dirs:
       test
   default-extensions:
@@ -90,6 +90,6 @@ test-suite z3ml-test
     , containers
     , parsec
     , recursion-schemes
+    , tyro
     , xml
-    , z3ml
   default-language: Haskell2010

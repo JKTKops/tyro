@@ -1,6 +1,6 @@
-name:                z3ml
+name:                tyro
 version:             0.1.0.0
-github:              "JKTKops/z3ml"
+github:              "JKTKops/tyro"
 license:             BSD3
 author:              "Max Kopinsky"
 maintainer:          "zerglingk9012@gmail.com"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description: An implementation of Finding Minimum Type Error Sources, Pavlinovic, King, & Wies (2014). Please see the README on GitHub at <https://github.com/githubuser/z3ml#readme>
+description: An implementation of Finding Minimum Type Error Sources, Pavlinovic, King, & Wies (2014). Please see the README on GitHub at <https://github.com/JKTKops/tyro#readme>
 
 language: Haskell2010
 default-extensions:
@@ -47,7 +47,7 @@ library:
   source-dirs: src
 
 executables:
-  z3ml:
+  tyro:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -57,10 +57,10 @@ executables:
     dependencies:
     - filepath
     - process
-    - z3ml
+    - tyro
 
 tests:
-  z3ml-test:
+  tyro-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -68,4 +68,4 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - z3ml
+    - tyro

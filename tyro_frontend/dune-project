@@ -5,7 +5,7 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github JKTKops/tyro))
 
 (authors "Max Kopinsky")
 
@@ -13,11 +13,9 @@
 
 (license LICENSE)
 
-(documentation https://url/to/documentation)
-
 (package
  (name zgen)
- (synopsis "Constraint generator for z3ml")
+ (synopsis "Constraint generator for tyro")
  (description "An implementation of the constraint generation algorithm following Finding Minimum Type Error Sources, Wies et al.")
  (depends
   (ocaml (= 4.13.1))
