@@ -4,6 +4,10 @@ An improved implementation of the algorithm described in Finding Minimum Type Er
 
 The working name of Tyro was `z3ml`, and this name may still appear throughout the codebase and in the names of components.
 
+## Publication
+
+In addition to my MSc (not yet available), an overview and evaluation of Tyro is published in FMCAD 2024[^1].
+
 # Installation
 
 ### Preparation
@@ -122,3 +126,5 @@ Such a language would not be OCaml, but would be an interesting underlying syste
 
 To experiment with a tyro-like tool for such a language, one would need to implement a new frontend, or modify the existing one.
 The main file of interest for modifying Tyro's frontend would be `tyro_frontend/lib/easyocaml/ezyGenerate.ml`.
+
+[^1]: https://repositum.tuwien.at/handle/20.500.12708/200778
